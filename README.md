@@ -23,4 +23,16 @@ scripts/run-qemu.sh        # 開機；repo 掛在 guest 的 /mnt/host，exit 關
 ## 文件
 
 - 學習計畫與進度：[docs/learning-plan.md](docs/learning-plan.md)
+- 教材素材：[docs/lessons/](docs/lessons/)
 - 學習筆記：[docs/notes/](docs/notes/)
+
+## 教材怎麼來的
+
+實際讀的課程由 [Heptabase](https://heptabase.com) 的 AI Tutor 生成
+（Goal「The Road to Embedded Systems」，8 堂對應階段 0–7）：
+
+1. 每個階段開始時，Claude 寫好該階段的素材 `docs/lessons/stage-N-<主題>.md`，
+   API、Kconfig 都對照專案用的 kernel 原始碼查證，並註明出處。
+2. 素材上傳到 Heptabase，作為 AI Tutor 的 Materials，由 AI Tutor 生成課程。
+3. 課程生成後，Claude 透過 `heptabase` CLI 讀取課程內容，再對照 kernel 原始碼檢查一遍，
+   有錯就指出來。
