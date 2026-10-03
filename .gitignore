@@ -1,0 +1,14 @@
+# kernel module 建置產物
+*.o
+*.ko
+*.mod
+*.mod.c
+*.cmd
+.*.cmd
+*.a
+modules.order
+Module.symvers
+.tmp_versions/
+
+# 環境：下載的原始碼、kernel 樹、映像檔（由腳本產生）
+/build/
