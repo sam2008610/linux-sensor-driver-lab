@@ -8,18 +8,35 @@
 
 ## 總覽
 
-| 階段 | 主題 | 你做出來的東西 | 狀態 |
-|---|---|---|---|
-| 0 | 環境與 kernel 建置 | hello module 在 QEMU 裡載入／卸載 | ⬜ |
-| 1 | Device model、device tree、probe/remove | DT 節點觸發 probe 的 platform driver | ⬜ |
-| 2 | Regmap、IIO sysfs、mutex | 可從 sysfs 讀寫的虛擬 sensor | ⬜ |
-| 3 | 中斷：threaded IRQ、IIO trigger／buffer | 由 gpio-sim 中斷驅動的資料擷取 | ⬜ |
-| 4 | 並行與除錯工具 | 壓力測試 + 故意製造的鎖錯誤實驗 | ⬜ |
-| 5 | 字元裝置：user/kernel 邊界 | misc device：blocking read、poll、ioctl | ⬜ |
-| 6 | 文件與模擬面試 | DT binding YAML、設計文件、模擬面試 | ⬜ |
-| 7 | （之後）搬到樹莓派 + 真實 sensor | regmap 換成 I2C，接真的硬體 | ⬜ |
+| 階段 | Issue | 主題 | 你做出來的東西 | 預估 | 目標週 | 實際 | 狀態 |
+|---|---|---|---|---|---|---|---|
+| 0 | #1 | 環境與 kernel 建置 | hello module 在 QEMU 裡載入／卸載 | 10h | W1 | | ⬜ |
+| 1 | #2 | Device model、device tree、probe/remove | DT 節點觸發 probe 的 platform driver | 12h | W2 | | ⬜ |
+| 2 | #3 | Regmap、IIO sysfs、mutex | 可從 sysfs 讀寫的虛擬 sensor | 15h | W3 | | ⬜ |
+| 3 | #4 | 中斷：threaded IRQ、IIO trigger／buffer | 由 gpio-sim 中斷驅動的資料擷取 | 25h | W4–W5 | | ⬜ |
+| 4 | #5 | 並行與除錯工具 | 壓力測試 + 故意製造的鎖錯誤實驗 | 15h | W6 | | ⬜ |
+| 5 | #6 | 字元裝置：user/kernel 邊界 | misc device：blocking read、poll、ioctl | 15h | W7 | | ⬜ |
+| 6 | #7 | 文件與模擬面試 | DT binding YAML、設計文件、模擬面試 | 12h | W8 | | ⬜ |
+| — | | 緩衝 | 補落後的進度 | 15h | W9 | | |
+| 7 | #8 | （之後）搬到樹莓派 + 真實 sensor | regmap 換成 I2C，接真的硬體 | 15h＋等貨 | W10 起 | | ⬜ |
 
 狀態：⬜ 未開始　🟨 進行中　✅ 完成（驗收清單全勾、面試題答過）
+
+### 時程
+
+以每週約 15 小時計。「預估」是粗估，沒有依據實際經驗校正；
+請在「實際」欄記下花的時數，做完兩三個階段後再回頭調整後面的預估。
+
+| 週 | 日期 | 週 | 日期 |
+|---|---|---|---|
+| W1 | 10/5–10/11 | W6 | 11/9–11/15 |
+| W2 | 10/12–10/18 | W7 | 11/16–11/22 |
+| W3 | 10/19–10/25 | W8 | 11/23–11/29 |
+| W4 | 10/26–11/1 | W9 | 11/30–12/6 |
+| W5 | 11/2–11/8 | W10 | 12/7– |
+
+找工作的節奏：做完階段 3（約 W5）就具備 DT、probe、IRQ、IIO 的實作經驗，可以開始投履歷；
+後面的階段（並行、字元裝置）可以邊面試邊做，剛好補上面試中被問倒的題目。
 
 閱讀材料的路徑以專案使用的 kernel 原始碼為準；不存在的話再找替代。
 共通參考：Bootlin「Linux kernel and driver development」免費講義（https://bootlin.com/training/kernel/ ）。
