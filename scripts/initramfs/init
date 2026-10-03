@@ -1,0 +1,25 @@
+#!/bin/busybox sh
+# initramfs 裡的 /init：kernel 開機後執行的第一個 user space 程式（PID 1）。
+# 由 scripts/mkinitramfs.sh 打包進 build/initramfs.cpio.gz。講解：docs/lessons/stage-0-env.md 第 4 節
+
+# initramfs 裡只有 /bin/busybox 一個執行檔；這行為每個 applet 建立 symlink（/bin/sh、/bin/mount ...）
+/bin/busybox --install -s
+
+mount -t proc     proc     /proc               # ps、/proc/interrupts
+mount -t sysfs    sysfs    /sys                # /sys/bus/platform、/sys/bus/iio
+mount -t devtmpfs devtmpfs /dev                # DEVTMPFS_MOUNT 對 initramfs 無效，要自己掛
+mount -t configfs configfs /sys/kernel/config  # gpio-sim 的設定介面（階段 3）
+mount -t debugfs  debugfs  /sys/kernel/debug   # dynamic debug、各種除錯資訊
+
+# host 的 repo（QEMU -virtfs ... mount_tag=host），編好的 .ko 從這裡 insmod
+mkdir -p /mnt/host
+mount -t 9p -o trans=virtio,version=9p2000.L host /mnt/host ||
+	echo "!! 9p 掛載失敗：/mnt/host 看不到 host 的檔案"
+
+echo
+echo "=== $(uname -sr) | repo 在 /mnt/host | 離開：exit（關機）或 Ctrl-a x ==="
+
+# cttyhack 讓 shell 拿到 controlling terminal，Ctrl-C 才能中斷前景程式。
+# 不用 exec：shell 結束後 PID 1 不能跟著結束（會 kernel panic），改成正常關機。
+setsid cttyhack sh
+poweroff -f
