@@ -115,20 +115,37 @@ kernel 初始化完硬體後，要執行**第一個 user space 程式**，它的
 ### 4.2 initramfs 是什麼
 
 - 一個 cpio 封存檔（可以壓縮），kernel 開機時把它解開到記憶體裡，當作根檔案系統。
-- 我們的 initramfs 只放 busybox，它是一個執行檔，提供 `sh`、`mount`、`insmod`、`dmesg` 等幾百個指令。
+- 我們的 initramfs 只放兩個檔案：`/bin/busybox` 和 `/init`，加上幾個空目錄和 `/dev/console`，壓縮後 1.2MB。
+- busybox 是**一個**執行檔，提供 `sh`、`mount`、`insmod`、`dmesg` 等幾百個指令（applet）。它看自己被叫成什麼名字，就執行哪個指令，所以只要建立 `/bin/sh -> busybox` 這類 symlink 就能用。
 - busybox 要**靜態連結**（static），原因見「想一想」第 2 題。
 
-### 4.3 `/init` 要做的事
+### 4.3 `mkinitramfs.sh` 的三步
+
+1. **下載 busybox 1.38.0**，比對雜湊值。
+2. **編譯**：`make defconfig` 之後改兩個選項，再 cross compile（實測約 9 秒）：
+   - `CONFIG_STATIC=y`：靜態連結
+   - 關掉 `CONFIG_TC`：busybox 的 `networking/tc.c` 用到 `TCA_CBQ_*`，但 cross 工具鏈附的 kernel header（7.0 版）已經沒有這些定義，不關會編譯失敗
+3. **打包**：用 kernel 樹裡的 `usr/gen_init_cpio`。它讀一份文字清單（`dir`、`file`、`nod` 等），直接產生 cpio。好處是 `/dev/console` 這種裝置節點寫在清單裡就好，**不需要 root 權限**去 `mknod`。kernel 自己內建的那份最小 initramfs 也是這樣產生的（`usr/default_cpio_list`）。
+
+### 4.4 `/init` 要做的事（`scripts/initramfs/init`）
 
 ```
-mount -t proc     proc     /proc      # ps、/proc/interrupts
-mount -t sysfs    sysfs    /sys       # 階段 1 起天天用：/sys/bus/platform、/sys/bus/iio
-mount -t devtmpfs devtmpfs /dev       # /dev 下的裝置節點
+/bin/busybox --install -s                      # 為每個 applet 建立 symlink：/bin/sh、/bin/mount ...
+mount -t proc     proc     /proc               # ps、/proc/interrupts
+mount -t sysfs    sysfs    /sys                # 階段 1 起天天用：/sys/bus/platform、/sys/bus/iio
+mount -t devtmpfs devtmpfs /dev                # /dev 下的裝置節點
+mount -t configfs configfs /sys/kernel/config  # gpio-sim 的設定介面（階段 3）
+mount -t debugfs  debugfs  /sys/kernel/debug   # dynamic debug 等除錯資訊
 mount -t 9p -o trans=virtio,version=9p2000.L host /mnt/host   # host 的 repo
-exec sh                               # 交給 shell
+setsid cttyhack sh                             # 交給 shell
+poweroff -f                                    # shell 結束後正常關機
 ```
 
-注意：`/dev` 必須手動掛載。`DEVTMPFS_MOUNT` 的說明寫得很清楚，它**對 initramfs 無效**（`drivers/base/Kconfig`，`config DEVTMPFS_MOUNT` 的 help）。
+幾個細節：
+
+- `/dev` 必須手動掛載。`DEVTMPFS_MOUNT` 的說明寫得很清楚，它**對 initramfs 無效**（`drivers/base/Kconfig`，`config DEVTMPFS_MOUNT` 的 help）。
+- `setsid cttyhack sh`：讓 shell 拿到 controlling terminal，不然按 `Ctrl-C` 中斷不了前景程式。
+- 為什麼不寫 `exec sh`？`exec` 會讓 shell 取代 PID 1，你一輸入 `exit`，PID 1 就結束了，kernel 會 panic。現在的寫法是 shell 結束後，`/init` 繼續執行 `poweroff -f` 正常關機。
 
 ---
 
@@ -140,14 +157,26 @@ exec sh                               # 交給 shell
 | `-cpu cortex-a72` | 和樹莓派 4 同一顆 CPU 核心 |
 | `-smp 2 -m 2G` | 2 核、2GB。至少要 2 核，才會出現真正的並行，race 才有機會發生 |
 | `-kernel Image -initrd initramfs.cpio.gz` | 直接載入 kernel 與 initramfs，不需要 bootloader |
-| `-append "console=ttyAMA0"` | kernel 開機參數。virt 的 UART 是 PL011，Linux 給它的名字是 `ttyAMA0` |
+| `-append "console=ttyAMA0 panic=-1"` | kernel 開機參數。virt 的 UART 是 PL011，Linux 給它的名字是 `ttyAMA0`；`panic=-1` 表示 panic 後立刻重開機 |
+| `-no-reboot` | 搭配 `panic=-1`：guest 一要重開機，QEMU 就直接結束。所以 kernel panic 時你會回到 host 的 shell，panic 訊息留在終端機上 |
 | `-nographic` | 不開視窗，console 直接接到你的終端機。離開按 `Ctrl-a x` |
 | `-virtfs local,path=<repo>,mount_tag=host,...` | 把 repo 分享給 guest，對應 `/init` 裡的 `mount -t 9p ... host` |
-| `-s`（選用） | 開 GDB server（port 1234），可以用 GDB 對 kernel 下中斷點 |
+| `-dtb <檔案>`（選用，`DTB=` 環境變數） | 用自己的 device tree 取代 QEMU 自動產生的，階段 1 起會用到 |
+| `-s`／`-S`（選用，`GDB=1`／`GDB=wait`） | 開 GDB server（port 1234）；`-S` 讓 CPU 先暫停，等 GDB 連上再開機 |
+
+用法：
+
+```
+scripts/run-qemu.sh                  # 一般開機
+scripts/run-qemu.sh loglevel=8       # 後面的參數會加到 kernel 開機參數
+DTB=build/lab.dtb scripts/run-qemu.sh
+```
 
 **DTB 從哪來？** QEMU 會依照模擬的硬體**自動產生** DTB，交給 kernel。階段 1 會把它匯出來（`-machine virt,dumpdtb=virt.dtb`）、加上我們自己的節點，再用 `-dtb` 傳回去。
 
-**純模擬**：host 是 x86，guest 是 arm64，不能用 KVM 加速，QEMU 要逐條翻譯指令，再加上 KASAN，guest 會比實機慢很多。這對學習沒影響，但做壓力測試時要記得。
+**純模擬**：host 是 x86，guest 是 arm64，不能用 KVM 加速，QEMU 要逐條翻譯指令，再加上 KASAN，guest 跑起來會比實機慢。實測從開機到執行 `/init` 約 2.7 秒，日常使用沒問題，但做壓力測試時要記得這個差距。
+
+**實測開機結果**：`uname -r` 是 `6.18.54-lab`、`nproc` 是 2，`/mnt/host` 看得到 repo。dmesg 有 `KernelAddressSanitizer initialized (generic)` 和 lockdep 的啟動訊息，整段開機沒有任何 warning。
 
 ---
 
