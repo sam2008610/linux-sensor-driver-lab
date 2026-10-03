@@ -61,15 +61,21 @@
 - 使用者修完後回覆每則意見，Claude 再看一輪；所有 `must-fix` 都解決後留言表示可以合併，
   由使用者自己 merge。
 
-# 每個階段的講解檔案
+# 每個階段的教材：Heptabase AI Tutor 產生課程，Claude 提供查證過的素材
 
-- 位置：`docs/lessons/stage-N-<主題>.md`，由 Claude 撰寫。
-- 每個階段開始時才寫（不要一次寫完），以專案 kernel 原始碼查證 API，並依前一階段的狀況調整深度。
-- 架構：整體觀念 → 運作流程圖 → 關鍵 API／指令／Kconfig（註明查證來源）→ 常見誤解與坑
-  →「想一想」（答案放在 `<details>` 摺疊區塊）→ 延伸閱讀。
-- 階段 0 的講解檔案和環境腳本放在同一個 PR；之後每個階段先單獨送講解檔案的 PR，
-  Claude 合併後通知使用者，使用者在 main 上讀完才開始寫程式。
-- 講解檔案是 Claude 的教材；`docs/notes/` 是使用者用自己的話重寫，不照抄講解檔案。
+- 使用者實際讀的課程由 Heptabase AI Tutor 產生（Goal「The Road to Embedded Systems」下的課程，
+  8 堂對應階段 0–7）。
+- `docs/lessons/stage-N-<主題>.md` 是給 AI Tutor 的**素材**，由 Claude 撰寫：
+  - 每個階段開始時才寫（不要一次寫完），以專案 kernel 原始碼查證 API，註明「檔案:行號」，
+    並依前一階段的狀況調整深度。
+  - 架構：整體觀念 → 運作流程圖 → 關鍵 API／指令／Kconfig（註明查證來源）→ 常見誤解與坑
+    →「想一想」（答案放在 `<details>` 摺疊區塊）→ 延伸閱讀。
+  - Claude 合併素材 PR 後，把要上傳的檔案複製到 `build/tutor/`（不進 git），
+    通知使用者加進 Heptabase 的 Materials。
+- 課程生成後，Claude 透過 `heptabase` CLI 讀取課程內容，對照 kernel 原始碼檢查準確性，
+  有錯就告訴使用者。CLI 未安裝時，請使用者在 Heptabase desktop 設定開啟 Local CLI Server
+  並安裝 CLI；在那之前無法檢查，要明說。
+- 素材與課程是教材；`docs/notes/` 是使用者用自己的話重寫，不照抄。
 
 # 每個階段結束時
 
