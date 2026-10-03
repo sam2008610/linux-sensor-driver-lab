@@ -38,6 +38,8 @@
 找工作的節奏：做完階段 3（約 W5）就具備 DT、probe、IRQ、IIO 的實作經驗，可以開始投履歷；
 後面的階段（並行、字元裝置）可以邊面試邊做，剛好補上面試中被問倒的題目。
 
+每個階段開始時，先讀 `docs/lessons/` 下該階段的講解檔案，再讀下面列的材料。
+
 閱讀材料的路徑以專案使用的 kernel 原始碼為準；不存在的話再找替代。
 共通參考：Bootlin「Linux kernel and driver development」免費講義（https://bootlin.com/training/kernel/ ）。
 LDD3（Linux Device Drivers, 3rd ed.）觀念仍有用，但 API 已過時，程式碼不要照抄。
