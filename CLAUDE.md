@@ -61,3 +61,10 @@
 
 - Claude 出 3–5 題面試風格的問題，使用者作答，Claude 指出不足。
 - 使用者在 `docs/notes/` 用自己的話寫學習筆記；Claude 可以 review，但不代寫。
+
+# 討論紀錄（Q&A）
+
+- 對話中有價值的技術討論，由 Claude 依 `.claude/skills/qa-notes/` 整理到 `docs/qa/<主題>.md`。
+  討論收尾時符合條件就自動記；使用者說「記下來」或 `/qa-notes` 強制記，說「不用記」就跳過。
+- Claude 只寫入檔案，不 commit；使用者看過後自己 commit。
+- `docs/qa/` 是 Claude 整理的素材，`docs/notes/` 仍由使用者用自己的話寫，不照抄 `docs/qa/`。
