@@ -44,6 +44,19 @@
   不憑記憶；沒查證的要標明。
 - Review 時指出問題和原因，讓使用者自己修。
 
+# Code review 流程
+
+- 平常在 GitHub PR 上用 inline comment review；階段 6 用 `git format-patch` 走一次
+  mailing list 風格的 review。
+- 送 review 前，使用者先自行跑 `checkpatch.pl --strict`，並確認編譯沒有 warning。
+- 優先順序：正確性（race、錯誤路徑、資源洩漏、context 錯誤）→ kernel 慣用寫法 → 可讀性。
+- 每則意見標上嚴重程度：`must-fix`（不修不能合併）、`should`、`nit`（可以不改）、
+  `question`（確認使用者的想法）。
+- race 這類問題用提問引導（例如「中斷剛好發生在第 X 行和第 Y 行之間會怎樣？」），
+  寫法或拼字的小問題直接講。
+- 使用者修完後回覆每則意見，Claude 再看一輪；所有 `must-fix` 都解決後留言表示可以合併，
+  由使用者自己 merge。
+
 # 每個階段結束時
 
 - Claude 出 3–5 題面試風格的問題，使用者作答，Claude 指出不足。
